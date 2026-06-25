@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PATH-FINDER | Anti-Procrastination Ecosystem</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2 family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-light: #F4F2FA;
@@ -278,6 +278,7 @@
       <p class="text-[10px] font-bold text-[#8E7AB5] tracking-wider uppercase">Layanan Klinis Eksternal</p>
       <h3 class="text-sm font-bold text-[#2D2A3A] mt-0.5">HealMind Session AwareMind Indonesia</h3>
       <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Butuh teman cerita atau merasa stres akademik berlebih? Akses ruang konseling sebaya gratis terenkripsi di sini.</p>
+      <!-- Tombol ini sudah tertaut otomatis ke vercel Healmind -->
       <button onclick="openHealMind()" class="mt-3 w-full bg-[#8E7AB5] text-white font-extrabold text-xs py-2.5 rounded-xl active:scale-95 transition shadow-sm">Hubungkan ke Konselor Sebaya</button>
     </div>
 
@@ -455,13 +456,13 @@ function spawnTarget() {
   el.style.top = Math.max(8, Math.random() * 72) + "%";
   
   if (isDistraction) {
-    // Media Sosial Cues (Lilac border)
+    // Media Sosial Cues
     el.innerHTML = `
       <div onclick="hitDistraction(this.parentElement)" class="w-14 h-14 bg-white border-2 border-[#BEAEE2] rounded-2xl flex items-center justify-center text-3xl shadow-sm cursor-pointer">📱</div>
       <button onclick="hitBypass(this.parentElement, event)" class="bg-[#BEAEE2] text-[#1C1C21] px-4 py-1 rounded-md text-[10px] font-extrabold active:scale-95 transition shadow-sm">BYPASS</button>
     `;
   } else {
-    // Target Akademik / Menulis (Sage border)
+    // Target Akademik
     const icons = ['📚','📝','📖'];
     const selectedIcon = icons[Math.floor(Math.random()*icons.length)];
     el.innerHTML = `
@@ -494,7 +495,6 @@ function hitAcademic(parent, event) {
   parent.remove();
 }
 
-// Bypass validation handler
 function hitBypass(parent, event) {
   event.stopPropagation();
   if (!gameState.running) return;
@@ -510,7 +510,7 @@ function hitDistraction(parent) {
   document.getElementById('game-score').innerText = gameState.score;
   const arena = document.getElementById('game-arena');
   arena.classList.add('shake-anim');
-  if ("vibrate" in navigator) navigator.vibrate(200); // Getar pengingat geter otomatis dari HP
+  if ("vibrate" in navigator) navigator.vibrate(200); 
   setTimeout(() => arena.classList.remove('shake-anim'), 350);
   parent.remove();
 }
@@ -550,14 +550,14 @@ function resetGameUI() {
 // ==========================================
 function simulateJITAI() {
   const toast = document.getElementById('jitai-toast');
-  if ("vibrate" in navigator) navigator.vibrate([800, 150, 800]); // Haptic vibrating alert otomatis 2 detik
+  if ("vibrate" in navigator) navigator.vibrate([800, 150, 800]); 
   toast.classList.remove('hidden-screen');
   
   setTimeout(() => {
     toast.classList.add('hidden-screen');
     switchTab('game');
     resetGameUI();
-    setTimeout(() => startGame(), 500); // Force Launch modul game 10 menit harian
+    setTimeout(() => startGame(), 500); 
   }, 3200);
 }
 
@@ -574,8 +574,12 @@ function sendChat() {
   input.value = '';
 }
 
+// FUNGSI UNTUK MEMBUKA LINK HEALMIND OTOMATIS
 function openHealMind() {
-  showToast("Membuka Sesi Enkripsi HealMind... Menghubungkan Konselor.", "🤝");
+  showToast("Mengalihkan ke HealMind Session...", "🤝");
+  setTimeout(() => {
+    window.open("https://healmind-ivory.vercel.app/", "_blank");
+  }, 1000);
 }
 </script>
 </body>
