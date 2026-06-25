@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PATH-FINDER | Anti-Procrastination Kit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base-bg: #1C1C21;
+    --card-bg: #27272D;
+    --border-color: #383842;
+    --sage: #9AB08A;
+    --lilac: #BEAEE2;
+    --earth: #D9C3A9;
+    --danger: #E2726E;
+  }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body { background: #1C1C21; font-family: 'Inter', sans-serif; color: white; overscroll-behavior: none; padding-bottom: 80px; }
+  .font-mono-tab { font-family: 'Roboto Mono', monospace; font-variant-numeric: tabular-nums; }
+  
+  #app-shell { max-width: 390px; margin: 0 auto; min-height: 100vh; background: #1C1C21; position: relative; overflow-x: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+  .screen { display: flex; flex-direction: column; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
+  .hidden-screen { display: none !important; }
+  .card { background: #27272D; border: 1px solid #383842; border-radius: 16px; }
+  
+  /* Form Inputs */
+  input[type=range] { accent-color: #9AB08A; }
+  .custom-input { background: #16161A; border: 1px solid #4A4A5A; color: white; border-radius: 12px; padding: 10px; width: 100%; font-size: 13px; outline: none; transition: border 0.3s; }
+  .custom-input:focus { border-color: #9AB08A; }
+
+  /* Flip Card */
+  .flip-card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-card-front, .flip-card-back { backface-visibility: hidden; }
+  .flip-card-back { transform: rotateY(180deg); }
+
+  /* Radar Animation Realistik */
+  .radar-wrap { position: relative; width: 220px; height: 220px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; background: radial-gradient(circle, rgba(190,174,226,0.05) 0%, rgba(28,28,33,0) 70%);}
+  .radar-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(190,174,226,0.3); }
+  .radar-ring.r1 { width: 100%; height: 100%; }
+  .radar-ring.r2 { width: 66%; height: 66%; }
+  .radar-ring.r3 { width: 33%; height: 33%; }
+  .radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 70%, rgba(190,174,226,0.5) 100%); animation: spin 2.5s linear infinite; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .radar-center { width: 14px; height: 14px; border-radius: 50%; background: #BEAEE2; box-shadow: 0 0 15px 3px rgba(190,174,226,0.8); z-index: 10; }
+  /* Lilac Risk Dot */
+  .risk-dot { position: absolute; top: 25%; left: 65%; width: 12px; height: 12px; border-radius: 50%; background: #BEAEE2; animation: pulseDot 1s infinite alternate; z-index: 11; }
+  @keyframes pulseDot { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(190,174,226,0.7); } 100% { transform: scale(1.3); box-shadow: 0 0 10px 5px rgba(190,174,226,0); } }
+
+  /* Game Area & Floating Score */
+  #game-arena { position: relative; width: 100%; height: 380px; background: #222228; border: 1px solid #383842; border-radius: 16px; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.5); }
+  .target { position: absolute; animation: targetIn 0.2s ease both; user-select: none; }
+  @keyframes targetIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+  .shake-anim { animation: shake 0.2s ease-in-out 2; border-color: #E2726E !important; background: rgba(226,114,110,0.1) !important; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  
+  .floating-score { position: absolute; font-weight: 800; font-size: 18px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 30; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+  @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
+
+  /* Bottom Navigation */
+  #bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; height: 72px; background: rgba(28,28,33,0.95); backdrop-filter: blur(10px); border-top: 1px solid #383842; display: flex; justify-content: space-around; align-items: center; z-index: 50; }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #71717A; font-size: 10px; font-weight: 600; transition: color 0.3s; }
+  .nav-btn svg { stroke: #71717A; transition: 0.3s; }
+  .nav-btn.active { color: #9AB08A; }
+  .nav-btn.active svg { stroke: #9AB08A; filter: drop-shadow(0 0 6px rgba(154,176,138,0.6)); }
+
+  /* Toasts */
+  .toast { animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="app-shell">
+
+  <!-- TOAST NOTIFICATION UMUM -->
+  <div id="general-toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-[#9AB08A] text-[#1C1C21] font-bold px-4 py-3 rounded-xl shadow-xl z-[100] hidden-screen toast border border-[#B8C7AD] text-xs flex items-center gap-2 w-[90%] max-w-[340px]">
+    <span id="toast-icon">✅</span> <span id="toast-msg">Notifikasi sukses!</span>
+  </div>
+
+  <!-- ======================= TAB 1: BERANDA (TTM CENTER) ======================= -->
+  <section id="screen-home" class="screen">
+    <header class="mb-4">
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">PATH-FINDER</p>
+          <h1 class="text-2xl font-extrabold mt-1">Beranda</h1>
+        </div>
+        <button onclick="document.getElementById('kpi-modal').classList.remove('hidden-screen')" class="bg-[#27272D] border border-[#383842] text-[10px] font-bold text-[#9AB08A] px-3 py-1.5 rounded-full shadow-sm">
+          KPI Juri
+        </button>
+      </div>
+    </header>
+
+    <!-- Dasbor Pemulihan Fokus -->
+    <div class="grid grid-cols-2 gap-3 mb-5">
+      <div class="card p-3.5">
+        <p class="text-[10px] uppercase text-slate-400 font-semibold">Focus Points</p>
+        <p id="dash-fp" class="text-xl font-bold font-mono-tab mt-1">1,250</p>
+        <p class="text-[9px] text-[#9AB08A] mt-0.5">Target: 1.250 FP</p>
+      </div>
+      <div class="card p-3.5">
+        <p class="text-[10px] uppercase text-slate-400 font-semibold">Streak Menulis</p>
+        <p class="text-xl font-bold font-mono-tab mt-1 text-[#BEAEE2]">14 <span class="text-xs font-normal">Hari</span></p>
+      </div>
+    </div>
+
+    <!-- Fase 1: Precontemplation -->
+    <div class="mb-5">
+      <h2 class="text-[11px] uppercase tracking-wider text-[#9AB08A] font-bold mb-2">Fase 1: Precontemplation</h2>
+      <div class="card p-4 perspective-1000">
+        <p class="text-sm font-bold mb-1">Interactive Myth-Buster</p>
+        <div id="myth-card" class="flip-card w-full h-32 mt-3 cursor-pointer" onclick="flipMythCard()">
+          <div class="flip-card-inner w-full h-full relative">
+            <div class="flip-card-front absolute w-full h-full bg-[#2A2A30] border border-[#4A4A5A] rounded-xl flex flex-col items-center justify-center p-4 text-center shadow-lg">
+              <span class="text-2xl mb-1">📱</span>
+              <p class="text-[11px] font-semibold">"Doomscrolling video pendek 5 menit aman untuk menyegarkan memori kerja otak."</p>
+              <p class="text-[9px] text-slate-400 mt-2">Ketuk untuk menebak Mitos/Fakta</p>
+            </div>
+            <div class="flip-card-back absolute w-full h-full bg-[#9AB08A]/20 border border-[#9AB08A] rounded-xl flex flex-col items-center justify-center p-4 text-center shadow-lg">
+              <p class="text-sm font-bold text-[#9AB08A]">MITOS!</p>
+              <p class="text-[10px] mt-1 text-slate-200">Durasi layar berlebih memicu kelelahan mental pada sirkuit PFC.</p>
+              <p class="text-xs font-bold font-mono-tab text-[#BEAEE2] mt-2">+50 FP Diperoleh</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fase 2: Contemplation -->
+    <div class="mb-5">
+      <h2 class="text-[11px] uppercase tracking-wider text-[#9AB08A] font-bold mb-2">Fase 2: Contemplation</h2>
+      <div class="card p-4">
+        <p class="text-sm font-bold mb-1">Cost-Benefit Neuro-Calculator</p>
+        <p class="text-[11px] text-slate-400 mb-3">Estimasi durasi layar gawai/sosmed (Jam per hari):</p>
+        <div class="flex items-center gap-3 mb-3">
+          <input type="range" id="screen-slider" min="1" max="12" step="1" value="2" class="w-full" oninput="calculateBenefits()">
+          <span id="screen-val" class="font-bold text-sm font-mono-tab text-white">2 Jam</span>
+        </div>
+        <div class="flex justify-between items-center text-xs font-bold bg-[#2A2A30] p-3 rounded-xl border border-[#383842]">
+          <div>
+            <p class="text-[9px] text-slate-400 font-normal">Waktu skripsi terbuang/tahun</p>
+            <p id="calc-hours" class="text-[#D9C3A9] font-mono-tab mt-0.5">730 Jam</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[9px] text-slate-400 font-normal">Efisiensi Memori Turun</p>
+            <p id="calc-memory" class="text-[#E2726E] font-mono-tab mt-0.5">18%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fase 3: Preparation -->
+    <div class="mb-2">
+      <h2 class="text-[11px] uppercase tracking-wider text-[#9AB08A] font-bold mb-2">Fase 3: Preparation</h2>
+      <div class="card p-4">
+        <p class="text-sm font-bold mb-2">Custom Quitting Procrastination Contract</p>
+        <label class="text-[10px] text-slate-400 font-semibold">TETAPKAN FOCUS DAY (MULAI MENULIS)</label>
+        <input type="date" class="custom-input mt-1 mb-3" id="quit-date">
+        <label class="text-[10px] text-slate-400 font-semibold">STRATEGI MANAJEMEN STRES AKADEMIK</label>
+        <textarea id="quit-strategy" class="custom-input mt-1 mb-3" rows="2" placeholder="Contoh: Jika stuck bab 2, saya akan jalan santai 5 menit, bukan buka TikTok."></textarea>
+        <button onclick="signContract()" class="w-full bg-[#BEAEE2] text-[#1C1C21] font-extrabold text-xs py-3 rounded-xl shadow-[0_0_15px_rgba(190,174,226,0.3)] active:scale-95 transition">Sepakati Kontrak Mandiri</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= TAB 2: SESI (ABM MODUL) ======================= -->
+  <section id="screen-game" class="screen hidden-screen">
+    <header class="mb-4">
+      <p class="text-[10px] uppercase tracking-widest text-[#9AB08A] font-bold">Fase 4: Action</p>
+      <h1 class="text-2xl font-extrabold mt-1">Defleksi Kognitif</h1>
+    </header>
+
+    <div class="card p-3 flex items-center justify-between bg-[#2A2A30] mb-4">
+      <div class="text-center flex-1">
+        <p class="text-[9px] uppercase tracking-widest text-slate-400">Timer Wajib</p>
+        <p id="game-timer" class="text-xl font-bold font-mono-tab text-[#BEAEE2] mt-0.5">10:00</p>
+      </div>
+      <div class="w-px h-8 bg-[#383842]"></div>
+      <div class="text-center flex-1">
+        <p class="text-[9px] uppercase tracking-widest text-slate-400">Skor Sesi (FP)</p>
+        <p id="game-score" class="text-xl font-bold font-mono-tab mt-0.5 text-[#9AB08A]">0</p>
+      </div>
+    </div>
+
+    <!-- Arena Game -->
+    <div id="game-arena">
+      <div id="game-overlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-[#1C1C21]/95 backdrop-blur-md">
+        <span class="text-4xl mb-3">🎓</span>
+        <h2 class="text-lg font-bold text-white mb-2">Casual Progress Squish</h2>
+        <p class="text-[12px] text-slate-300 leading-relaxed mb-6">
+          <span class="text-[#9AB08A] font-bold">Desirable Difficulty:</span> Sesi wajib diselesaikan <b>10 Menit</b> tanpa jeda. <br><br>Ketuk target akademik (Buku/Draf) untuk <b>+10 FP</b>. Abaikan distraksi Sosmed (TikTok/IG) dengan mengetuk tombol <b>BYPASS</b> untuk <b>+5 FP</b>.
+        </p>
+        <button onclick="startGame()" class="bg-[#9AB08A] text-[#1C1C21] px-8 py-3 rounded-xl text-sm font-extrabold shadow-[0_0_20px_rgba(154,176,138,0.5)] active:scale-95 transition">
+          Mulai Latihan PFC (10 Menit)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= TAB 3: RADAR JITAI ======================= -->
+  <section id="screen-radar" class="screen hidden-screen">
+    <header class="mb-4">
+      <p class="text-[10px] uppercase tracking-widest text-[#9AB08A] font-bold">Pemantauan Ekologis</p>
+      <h1 class="text-2xl font-extrabold mt-1">Radar JITAI</h1>
+      <p class="text-[12px] text-slate-400 mt-1">Sistem deteksi lokasi proaktif berbasis JITAI dan GPS.</p>
+    </header>
+
+    <div class="card p-5 mt-2 flex flex-col items-center">
+      <div class="radar-wrap mb-4">
+        <div class="radar-ring r1"></div><div class="radar-ring r2"></div><div class="radar-ring r3"></div>
+        <div class="radar-sweep"></div>
+        <div class="radar-center"></div>
+        <div class="risk-dot"></div>
+      </div>
+      <p class="text-xs text-center text-[#BEAEE2] font-bold mb-1">
+        🛰️ Memindai Lingkungan Spasial (Pasif)
+      </p>
+      <p class="text-[10px] text-slate-400 mb-4 text-center">Zona Lilac: Coffee Shop / Area Kasur (High-Risk)</p>
+
+      <div class="w-full border-t border-[#383842] pt-4">
+        <p class="text-[11px] font-bold text-center mb-3 text-slate-400">Alat Simulasi Logika Juri (d ≤ 50m):</p>
+        <button onclick="simulateJITAI()" class="w-full bg-[#E2726E]/20 text-[#E2726E] border border-[#E2726E]/50 py-3 rounded-xl text-[11px] font-extrabold mb-2 active:scale-95 transition">
+          Kirim Sinyal Kerentanan & Buka Paksa Aplikasi
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= TAB 4: KOMUNITAS & REWARDS ======================= -->
+  <section id="screen-community" class="screen hidden-screen">
+    <header class="mb-4">
+      <p class="text-[10px] uppercase tracking-widest text-[#9AB08A] font-bold">Fase 5: Maintenance</p>
+      <h1 class="text-2xl font-extrabold mt-1">Komunitas</h1>
+    </header>
+
+    <!-- Profil Mini -->
+    <div class="card p-3 mb-4 flex items-center justify-between border-[#9AB08A]/50 bg-[#9AB08A]/5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-[#383842] rounded-full flex items-center justify-center text-xl">👤</div>
+        <div>
+          <p class="text-xs font-bold text-white">Sofi (Anda)</p>
+          <p class="text-[10px] text-slate-400">Fase Pemulihan: Maintenance</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-[10px] uppercase text-slate-400 font-bold">Saldo FP</p>
+        <p class="text-sm font-bold font-mono-tab text-[#9AB08A]" id="profile-fp">1,250 FP</p>
+      </div>
+    </div>
+
+    <!-- Anonymous Chat -->
+    <div class="card p-4 mb-4 flex flex-col" style="height: 280px;">
+      <h2 class="text-sm font-bold mb-3 flex items-center gap-2"><span>💬</span> Anonymous Peer Support Group</h2>
+      
+      <!-- Chat Feed -->
+      <div id="chat-feed" class="flex-1 overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-hide">
+        <div class="bg-[#2A2A30] p-3 rounded-xl border border-[#383842]">
+          <div class="flex items-center gap-2 mb-1">
+            <p class="text-[11px] font-bold text-[#BEAEE2]">User_72X</p>
+            <span class="text-[8px] bg-[#9AB08A]/20 text-[#9AB08A] px-1.5 py-0.5 rounded border border-[#9AB08A]/30">Peer-Ambassador</span>
+          </div>
+          <p class="text-xs text-slate-300">Pusing revisi itu wajar banget, kok. Mainkan Progress Squish 10 menit yuk, kalian pasti bisa fokus lagi! 📚</p>
+        </div>
+      </div>
+
+      <!-- Chat Input -->
+      <div class="flex gap-2 border-t border-[#383842] pt-3">
+        <input type="text" id="chat-input" placeholder="Ketik dukungan anonim..." class="custom-input py-2 flex-1 text-white">
+        <button onclick="sendChat()" class="bg-[#9AB08A] text-[#1C1C21] px-5 rounded-xl text-xs font-extrabold shadow-[0_0_10px_rgba(154,176,138,0.4)] active:scale-95 transition">Kirim</button>
+      </div>
+    </div>
+
+    <!-- Penukaran Reward -->
+    <div class="card p-4">
+      <h2 class="text-sm font-bold mb-3 flex items-center gap-2"><span>🏷️</span> Penukaran Reward UMKM</h2>
+      <div class="flex items-center justify-between bg-[#2A2A30] p-3 rounded-xl border border-[#383842]">
+        <div>
+          <p class="text-[11px] font-bold text-white leading-tight">Voucer Potongan Cetak Tugas<br>& Menu Kopi Produktif 20%</p>
+          <p class="text-[9px] text-slate-400 mt-1">Diskon Riil UMKM Sekitar Kampus</p>
+        </div>
+        <button onclick="claimReward()" class="bg-[#D9C3A9] text-[#1C1C21] px-4 py-2 rounded-lg text-[10px] font-extrabold shadow-[0_0_10px_rgba(217,195,169,0.4)] active:scale-95 transition shrink-0 ml-2">
+          Tukar 500 FP
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= BOTTOM NAVIGATION ======================= -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="mt-1">Beranda</span>
+    </button>
+    <button class="nav-btn" id="nav-game" onclick="switchTab('game')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><circle cx="17" cy="12" r="1"/></svg><span class="mt-1">Sesi</span>
+    </button>
+    <button class="nav-btn" id="nav-radar" onclick="switchTab('radar')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v20"/><path d="M2 12h20"/><circle cx="12" cy="12" r="4"/></svg><span class="mt-1">Radar</span>
+    </button>
+    <button class="nav-btn" id="nav-community" onclick="switchTab('community')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="mt-1">Komunitas</span>
+    </button>
+  </nav>
+
+  <!-- JITAI Push Notification Modal -->
+  <div id="jitai-toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[350px] bg-[#E2726E] text-white p-4 rounded-xl shadow-2xl z-50 hidden-screen toast border border-red-300">
+    <div class="flex items-start gap-3">
+      <span class="text-2xl">🚨</span>
+      <div>
+        <p class="text-sm font-bold">Geofencing Alert: Zona Rawan!</p>
+        <p id="jitai-msg" class="text-xs mt-1 leading-relaxed">Sistem mendeteksi Anda di zona prokrastinasi. Membuka paksa Sesi Defleksi Kognitif...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Validasi Juri Modal -->
+  <div id="kpi-modal" class="fixed inset-0 bg-[#1C1C21]/90 backdrop-blur-sm z-50 hidden-screen flex flex-col items-center justify-center p-6">
+    <div class="card p-6 w-full max-w-[340px] text-center border-[#9AB08A]">
+      <p class="text-[10px] text-[#9AB08A] font-bold tracking-widest uppercase mb-2">Validasi Fungsional</p>
+      <h2 class="text-xl font-bold mb-4">Laporan Klinis (KPI)</h2>
+      <div class="bg-[#2A2A30] p-3 rounded-xl mb-3 text-left border border-[#383842]">
+        <p class="text-xs text-slate-400">Peningkatan Kontrol Inhibisi (14 Hari)</p>
+        <p class="text-lg font-bold text-[#9AB08A] font-mono-tab">85.4% <span class="text-xs font-normal">Tercapai</span></p>
+      </div>
+      <div class="bg-[#2A2A30] p-3 rounded-xl mb-6 text-left border border-[#383842]">
+        <p class="text-xs text-slate-400">Waktu Reaksi Bypass Distraksi Gawai</p>
+        <p class="text-lg font-bold text-[#BEAEE2] font-mono-tab">< 380 ms <span class="text-xs font-normal">Optimal</span></p>
+      </div>
+      <button onclick="document.getElementById('kpi-modal').classList.add('hidden-screen')" class="w-full bg-[#383842] text-white py-3 rounded-xl text-sm font-extrabold active:scale-95 transition">Tutup Laporan</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==========================================
+// UTILITIES & GLOBAL STATE
+// ==========================================
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('general-toast');
+  toast.querySelector('#toast-msg').innerText = msg;
+  toast.style.backgroundColor = isError ? "#E2726E" : "#9AB08A";
+  toast.style.borderColor = isError ? "#E2726E" : "#B8C7AD";
+  toast.style.color = isError ? "white" : "#1C1C21";
+  toast.querySelector('#toast-icon').innerText = isError ? "⚠️" : "✅";
+  
+  toast.classList.remove('hidden-screen');
+  setTimeout(() => toast.classList.add('hidden-screen'), 3000);
+}
+
+function updateFP(points) {
+  let fp = parseInt(document.getElementById('dash-fp').innerText.replace(/,/g, ''));
+  let newFp = fp + points;
+  document.getElementById('dash-fp').innerText = newFp.toLocaleString('en-US');
+  document.getElementById('profile-fp').innerText = newFp.toLocaleString('en-US') + " FP";
+}
+
+// ==========================================
+// 1. NAVIGATION
+// ==========================================
+function switchTab(tabId) {
+  ['home', 'game', 'radar', 'community'].forEach(t => {
+    document.getElementById('screen-' + t).classList.add('hidden-screen');
+    document.getElementById('nav-' + t).classList.remove('active');
+  });
+  document.getElementById('screen-' + tabId).classList.remove('hidden-screen');
+  document.getElementById('nav-' + tabId).classList.add('active');
+}
+
+// ==========================================
+// 2. BERANDA LOGIC
+// ==========================================
+let mythFlipped = false;
+function flipMythCard() {
+  if (!mythFlipped) {
+    document.getElementById('myth-card').classList.add('flipped');
+    mythFlipped = true;
+    updateFP(50);
+  }
+}
+
+function calculateBenefits() {
+  const hours = parseInt(document.getElementById('screen-slider').value);
+  document.getElementById('screen-val').innerText = hours + " Jam";
+  const yearlyWasted = hours * 365;
+  document.getElementById('calc-hours').innerText = yearlyWasted.toLocaleString('id-ID') + " Jam";
+  // Asumsi penurunan efisiensi memori (approx 18% for 6 hours -> 3% per hour multiplier base)
+  const memoryLoss = Math.min(100, hours * 3);
+  document.getElementById('calc-memory').innerText = memoryLoss + "%";
+}
+
+function signContract() {
+  const date = document.getElementById('quit-date').value;
+  const strategy = document.getElementById('quit-strategy').value;
+  if(!date || !strategy) return showToast("Mohon lengkapi Tanggal & Strategi Anda!", true);
+  showToast("Kontrak Komitmen Disepakati!");
+}
+
+// ==========================================
+// 3. ABM GAME LOGIC (10 MENIT STRICT)
+// ==========================================
+const GAME_TIME = 600; // 10 menit
+let gameState = { running: false, score: 0, time: GAME_TIME, timerId: null, spawnId: null };
+
+function startGame(force = false) {
+  document.getElementById('game-overlay').classList.add('hidden-screen');
+  gameState.running = true;
+  gameState.score = 0;
+  gameState.time = GAME_TIME;
+  document.getElementById('game-score').innerText = "0";
+  
+  gameState.timerId = setInterval(() => {
+    gameState.time--;
+    let m = Math.floor(gameState.time / 60).toString().padStart(2, '0');
+    let s = (gameState.time % 60).toString().padStart(2, '0');
+    document.getElementById('game-timer').innerText = `${m}:${s}`;
+    if (gameState.time <= 0) endGame();
+  }, 1000);
+
+  spawnTarget();
+}
+
+function spawnTarget() {
+  if (!gameState.running) return;
+  const arena = document.getElementById('game-arena');
+  const isDistraction = Math.random() < 0.45; // 45% Sosmed distractions
+  
+  const el = document.createElement('div');
+  el.className = "target absolute flex flex-col items-center gap-1 z-10";
+  el.style.left = Math.max(5, Math.random() * 80) + "%";
+  el.style.top = Math.max(5, Math.random() * 70) + "%";
+  
+  if (isDistraction) {
+    // Distraktor: Sosmed
+    const sosmed = ['📱','📲','💬'];
+    const icon = sosmed[Math.floor(Math.random() * sosmed.length)];
+    el.innerHTML = `
+      <div onclick="hitDistraction(this.parentElement)" class="w-16 h-16 bg-[#16161A] border-2 border-[#BEAEE2] rounded-2xl flex items-center justify-center text-4xl shadow-[0_0_15px_rgba(190,174,226,0.2)] cursor-pointer">${icon}</div>
+      <button onclick="hitBypass(this.parentElement, event)" class="bg-[#BEAEE2] text-[#1C1C21] px-5 py-1.5 rounded-md text-[11px] font-extrabold shadow-md active:scale-95 transition">BYPASS</button>
+    `;
+  } else {
+    // Target Fokus Akademik
+    const akademik = ['📚','📝','🎓','📖'];
+    const icon = akademik[Math.floor(Math.random() * akademik.length)];
+    el.innerHTML = `
+      <button onclick="hitAcademic(this.parentElement, event)" class="w-16 h-16 bg-[#27272D] border-2 border-[#9AB08A] rounded-2xl flex items-center justify-center text-4xl shadow-[0_4px_15px_rgba(154,176,138,0.2)] active:scale-95 transition cursor-pointer">${icon}</button>
+    `;
+  }
+  
+  arena.appendChild(el);
+  setTimeout(() => { if (el.parentNode) { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); } }, 1600);
+  
+  // Stacking logic for higher difficulty (random faster spawns)
+  let nextSpawn = 700 + Math.random() * 500;
+  if (gameState.running) gameState.spawnId = setTimeout(spawnTarget, nextSpawn);
+}
+
+function createFloatingText(x, y, text, colorClass) {
+  const arena = document.getElementById('game-arena');
+  const rect = arena.getBoundingClientRect();
+  const floatEl = document.createElement('div');
+  floatEl.className = `floating-score ${colorClass}`;
+  floatEl.innerText = text;
+  floatEl.style.left = (x - rect.left - 10) + 'px';
+  floatEl.style.top = (y - rect.top - 20) + 'px';
+  arena.appendChild(floatEl);
+  setTimeout(() => floatEl.remove(), 800);
+}
+
+function hitAcademic(parent, event) {
+  if (!gameState.running) return;
+  gameState.score += 10;
+  document.getElementById('game-score').innerText = gameState.score;
+  createFloatingText(event.clientX, event.clientY, '+10 FP', 'text-[#B8C7AD]');
+  parent.remove();
+}
+
+function hitBypass(parent, event) {
+  event.stopPropagation(); 
+  if (!gameState.running) return;
+  gameState.score += 5;
+  document.getElementById('game-score').innerText = gameState.score;
+  createFloatingText(event.clientX, event.clientY, '+5 FP', 'text-[#BEAEE2]');
+  parent.remove();
+}
+
+function hitDistraction(parent) {
+  if (!gameState.running) return;
+  gameState.score -= 5;
+  document.getElementById('game-score').innerText = gameState.score;
+  const arena = document.getElementById('game-arena');
+  arena.classList.add('shake-anim');
+  if("vibrate" in navigator) navigator.vibrate(200);
+  setTimeout(() => arena.classList.remove('shake-anim'), 400);
+  parent.remove();
+}
+
+function endGame() {
+  gameState.running = false;
+  clearInterval(gameState.timerId);
+  clearTimeout(gameState.spawnId);
+  updateFP(gameState.score);
+
+  document.getElementById('game-arena').innerHTML = `
+    <div id="game-overlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-[#1C1C21]/95 backdrop-blur-md">
+      <h2 class="text-xl font-bold text-[#9AB08A] mb-2">Sesi 10 Menit Selesai!</h2>
+      <p class="text-[12px] text-slate-300 mb-4">Sirkuit kendali eksekutif Anda berhasil dilatih.</p>
+      <p class="text-3xl font-mono-tab font-bold mb-6">+${gameState.score} FP</p>
+      <button onclick="resetGameUI()" class="bg-[#27272D] border border-[#383842] text-white px-8 py-3 rounded-xl text-sm font-extrabold active:scale-95 transition">Kembali ke Beranda</button>
+    </div>
+  `;
+}
+
+function resetGameUI() {
+  document.getElementById('game-timer').innerText = "10:00";
+  document.getElementById('game-score').innerText = "0";
+  switchTab('home');
+  setTimeout(() => {
+    document.getElementById('game-arena').innerHTML = `
+      <div id="game-overlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-[#1C1C21]/95 backdrop-blur-md">
+        <span class="text-4xl mb-3">🎓</span>
+        <h2 class="text-lg font-bold text-white mb-2">Casual Progress Squish</h2>
+        <p class="text-[12px] text-slate-300 leading-relaxed mb-6">
+          <span class="text-[#9AB08A] font-bold">Desirable Difficulty:</span> Sesi wajib diselesaikan <b>10 Menit</b> tanpa jeda. <br><br>Ketuk target akademik (Buku/Draf) untuk <b>+10 FP</b>. Abaikan distraksi Sosmed (TikTok/IG) dengan mengetuk tombol <b>BYPASS</b> untuk <b>+5 FP</b>.
+        </p>
+        <button onclick="startGame()" class="bg-[#9AB08A] text-[#1C1C21] px-8 py-3 rounded-xl text-sm font-extrabold shadow-[0_0_20px_rgba(154,176,138,0.5)] active:scale-95 transition">
+          Mulai Latihan PFC (10 Menit)
+        </button>
+      </div>
+    `;
+  }, 500);
+}
+
+// ==========================================
+// 4. RADAR & JITAI
+// ==========================================
+function simulateJITAI() {
+  const toast = document.getElementById('jitai-toast');
+  if ("vibrate" in navigator) navigator.vibrate([1000, 200, 1000]); 
+  toast.classList.remove('hidden-screen');
+  
+  setTimeout(() => {
+    toast.classList.add('hidden-screen');
+    switchTab('game');
+    resetGameUI();
+    setTimeout(() => startGame(true), 600);
+  }, 3500);
+}
+
+// ==========================================
+// 5. KOMUNITAS (CHAT & REWARD)
+// ==========================================
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+
+  const feed = document.getElementById('chat-feed');
+  const bubble = document.createElement('div');
+  bubble.className = "bg-[#9AB08A]/10 p-3 rounded-xl border border-[#9AB08A]/30 animate-[slideDown_0.3s]";
+  bubble.innerHTML = `
+    <p class="text-[11px] font-bold text-[#B8C7AD] mb-1">Anda (Anonim)</p>
+    <p class="text-xs text-slate-200">${text}</p>
+  `;
+  feed.appendChild(bubble);
+  
+  feed.scrollTop = feed.scrollHeight;
+  input.value = '';
+}
+
+function claimReward() {
+  let fp = parseInt(document.getElementById('dash-fp').innerText.replace(/,/g, ''));
+  if(fp >= 500) {
+    updateFP(-500);
+    showToast("Voucer berhasil ditukar! Cek tab Rewards Anda.");
+  } else {
+    showToast("Poin FP Anda tidak cukup (Butuh 500 FP)", true);
+  }
+}
+</script>
+</body>
+</html>
